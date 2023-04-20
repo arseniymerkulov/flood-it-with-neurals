@@ -22,14 +22,19 @@ class Client:
         async def handler():
             async with websockets.connect(settings.gateway_url) as socket:
                 handshake = MessageHandshake(ConnectionType.front.value)
-                await socket.send(Message.pack(handshake))
+                await socket.send(Message.pack(handshake))\
+
+                message = Message.unpack(await socket.recv())
+                assert message.message_type == MessageType.init_field_request.value
+
+                print('init field')
+                print(message.data)
 
                 while True:
                     message = Message.unpack(await socket.recv())
-                    print(message.message_type)
-                    print(MessageType.update_field_request.value)
                     assert message.message_type == MessageType.update_field_request.value
 
+                    print('update field')
                     print(message.data)
 
                     message = MessageUpdateFieldResponse()

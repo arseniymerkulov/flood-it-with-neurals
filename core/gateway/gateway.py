@@ -9,6 +9,7 @@ import time
 from core.utility.message_type import MessageType
 from core.utility.message import (
     Message,
+    MessageInitFieldRequest,
     MessageUpdateFieldRequest,
     MessageUpdateFieldResponse,
     MessageTurnRequest,
@@ -17,6 +18,7 @@ from core.utility.message import (
 )
 from core.utility.connection_type import ConnectionType
 from core.gateway.field import Field
+from core.gateway.color import Color
 from core.settings import Settings
 
 
@@ -31,8 +33,8 @@ class Gateway:
 
     @staticmethod
     def run():
-        async def _send_update_field_request(socket, field, turn_index):
-            message = MessageUpdateFieldRequest(field, turn_index)
+        async def _send_update_field_request(socket, field, turn_index, color):
+            message = MessageUpdateFieldRequest(field, turn_index, color)
             await socket.send(Message.pack(message))
 
             message = Message.unpack(await socket.recv())
@@ -50,7 +52,9 @@ class Gateway:
             return message
 
         async def handler(socket):
-            message = Message.unpack(await socket.recv())
+            message = await socket.recv()
+            message = Message.unpack(message)
+
             assert message.message_type == MessageType.handshake.value
 
             if message.connection_type == ConnectionType.client.value:
@@ -63,11 +67,14 @@ class Gateway:
                     return
 
                 Gateway.logger.info(f'new front registered {socket}')
-
                 Gateway.front.add(socket)
                 # mb make another client - BE
+
+                # try:
                 field = Field()
-                await _send_update_field_request(socket, field, -1)
+                message = MessageInitFieldRequest(field, len(Gateway.clients))
+                await socket.send(Message.pack(message))
+
                 Gateway.logger.info(f'send init field data')
 
                 while True:
@@ -84,11 +91,21 @@ class Gateway:
                             continue
 
                         Gateway.logger.info(message.message_type)
-                        # apply turn data ...
+                        color = message.data['color']
+                        color = Color(int(color))
+                        killed, colored, full = field.turn(i, color)
+                        print(killed)
+                        print(colored)
+                        print(full)
 
-                        await _send_update_field_request(socket, field, i)
+                        await _send_update_field_request(socket, field, i, color)
+
+                    # if killed
+                    # discard killed from clients
 
                     time.sleep(2)
+                # except websockets.exceptions.ConnectionClosedOK:
+                #     Gateway.
 
         async def wrapper():
             scheme = urlparse(settings.gateway_url)

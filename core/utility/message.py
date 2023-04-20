@@ -33,13 +33,27 @@ class MessageHandshake(Message):
                          {})
 
 
-class MessageUpdateFieldRequest(Message):
-    def __init__(self, field: Field, turn_index: int):
+class MessageInitFieldRequest(Message):
+    def __init__(self, field: Field, players: int):
         data = {
             'field_size': field.size,
             'field': field.get_data_to_num(),
             'max_color': Color.max(),
-            'turn': turn_index
+            'players': players
+        }
+
+        super().__init__(MessageType.init_field_request.value,
+                         ConnectionType.gateway.value,
+                         data)
+
+
+class MessageUpdateFieldRequest(Message):
+    def __init__(self, field: Field, turn_index: int, color: Color):
+        data = {
+            'field_size': field.size,
+            'field': field.get_data_to_num(),
+            'color': color.value,
+            'turn': turn_index,
         }
 
         super().__init__(MessageType.update_field_request.value,
