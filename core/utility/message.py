@@ -33,6 +33,20 @@ class MessageHandshake(Message):
                          {})
 
 
+class MessageReadyRequest(Message):
+    def __init__(self):
+        super().__init__(MessageType.ready_request.value,
+                         ConnectionType.gateway.value,
+                         {})
+
+
+class MessageReadyResponse(Message):
+    def __init__(self):
+        super().__init__(MessageType.ready_response.value,
+                         ConnectionType.front.value,
+                         {})
+
+
 class MessageInitFieldRequest(Message):
     def __init__(self, field: Field, players: int):
         data = {
@@ -68,6 +82,25 @@ class MessageUpdateFieldResponse(Message):
                          {})
 
 
+class MessageFieldStatusRequest(Message):
+    def __init__(self):
+        super().__init__(MessageType.field_status_request.value,
+                         ConnectionType.client.value,
+                         {})
+
+
+class MessageFieldStatusResponse(Message):
+    def __init__(self, field: Field, colored, terminated):
+        super().__init__(MessageType.field_status_response.value,
+                         ConnectionType.gateway.value,
+                         {
+                             'field_size': field.size,
+                             'field': field.get_data_to_num(),
+                             'colored': colored,
+                             'terminated': terminated
+                         })
+
+
 class MessageTurnRequest(Message):
     def __init__(self):
         super().__init__(MessageType.turn_request.value,
@@ -81,6 +114,24 @@ class MessageTurnResponse(Message):
                          ConnectionType.client.value,
                          {
                              'color': color.value
+                         })
+
+
+class MessageClientWin(Message):
+    def __init__(self, turn_index: int):
+        super().__init__(MessageType.client_win.value,
+                         ConnectionType.gateway.value,
+                         {
+                             'turn': turn_index
+                         })
+
+
+class MessageClientKilled(Message):
+    def __init__(self, turn_index: int):
+        super().__init__(MessageType.client_killed.value,
+                         ConnectionType.gateway.value,
+                         {
+                             'turn': turn_index
                          })
 
 

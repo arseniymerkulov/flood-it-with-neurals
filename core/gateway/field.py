@@ -13,49 +13,69 @@ class Field:
     def get_data_to_num(self):
         return [[color.value for color in column] for column in self.data]
 
-    def _get_starting_point_and_bias(self, turn_index: int):
+    def get_starting_point(self, turn_index: int):
         assert turn_index < 4
 
         def left_upper():
-            return 0, 0, 1, 1
+            return 0, 0
 
         def left_bottom():
-            return 0, len(self.data) - 1, 1, -1
+            return 0, len(self.data) - 1
 
         def right_upper():
-            return len(self.data) - 1, 0, -1, 1
+            return len(self.data) - 1, 0
 
         def right_bottom():
-            return len(self.data) - 1, len(self.data) - 1, -1, -1
+            return len(self.data) - 1, len(self.data) - 1
 
         return [left_upper, right_bottom, left_bottom, right_upper][turn_index]()
 
     def turn(self, turn_index: int, color: Color):
-        sx, sy, bias_x, bias_y = self._get_starting_point_and_bias(turn_index)
+        sx, sy = self.get_starting_point(turn_index)
         initial_color = self.data[sx][sy]
         corners = set()
+        marked = [[False for item in column] for column in self.data]
 
-        def update_field(starting_point):
+        def update_field(starting_point, marked):
             sx, sy = starting_point
 
-            if self.data[sx][sy] == initial_color:
-                self.data[sx][sy] = color
+            if sx < 0 or sx >= self.size or sy < 0 or sy >= self.size:
+                return
 
-                if (sx == 0 or sx == self.size - 1) and (sy == 0 or sy == self.size - 1):
-                    corners.add((sx, sy))
+            if marked[sx][sy] or self.data[sx][sy] != initial_color:
+                return
 
-                new_x = sx + bias_x
-                new_y = sy + bias_y
+            self.data[sx][sy] = color
+            marked[sx][sy] = True
 
-                if 0 <= new_x < self.size:
-                    update_field((new_x, sy))
+            if (sx == 0 or sx == self.size - 1) and (sy == 0 or sy == self.size - 1):
+                corners.add((sx, sy))
 
-                if 0 <= new_y < self.size:
-                    update_field((sx, new_y))
+            update_field((sx + 1, sy), marked)
+            update_field((sx - 1, sy), marked)
+            update_field((sx, sy + 1), marked)
+            update_field((sx, sy - 1), marked)
 
-        update_field((sx, sy))
+        def search_field(initial_color, starting_point, marked):
+            sx, sy = starting_point
+
+            if sx < 0 or sx >= self.size or sy < 0 or sy >= self.size:
+                return 0
+
+            if marked[sx][sy] or self.data[sx][sy] != initial_color:
+                return 0
+
+            marked[sx][sy] = True
+
+            return sum((1,
+                        search_field(initial_color, (sx + 1, sy), marked),
+                        search_field(initial_color, (sx - 1, sy), marked),
+                        search_field(initial_color, (sx, sy + 1), marked),
+                        search_field(initial_color, (sx, sy - 1), marked)))
+
+        update_field((sx, sy), [[False for item in column] for column in self.data])
         corners.discard((sx, sy))
-        killed = [i for i in range(4) if self._get_starting_point_and_bias(i)[0:2] in corners]
-        colored = sum([len([node for node in column if node == color]) for column in self.data])
+        killed = [i for i in range(4) if self.get_starting_point(i) in corners]
+        colored = search_field(color, (sx, sy), [[False for item in column] for column in self.data])
 
-        return killed, colored, self.size ** 2
+        return killed, colored, colored == self.size ** 2

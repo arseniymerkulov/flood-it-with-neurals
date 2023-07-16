@@ -6,6 +6,9 @@ class Color(enum.Enum):
     red = 0
     green = 1
     blue = 2
+    orange = 3
+    yellow = 4
+    magenta = 5
 
     @staticmethod
     def min():
@@ -21,3 +24,4 @@ class Color(enum.Enum):
         min_color = min(colors)
         max_color = max(colors)
         return Color(random.randint(min_color, max_color))
+
