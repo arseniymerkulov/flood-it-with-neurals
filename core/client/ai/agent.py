@@ -12,9 +12,7 @@ from core.settings import Settings
 settings = Settings.get_instance()
 
 
-# TODO: 1. Store states as matrices
-#       2. Store actions as basis vectors
-#       3. Setup colors from settings?
+# TODO: Setup colors from settings?
 
 
 Transition = namedtuple('Transition', ('state', 'action', 'next_state', 'reward'))
@@ -50,13 +48,11 @@ class DQN(nn.Module):
 
     def __init__(self, n_actions):
         super(DQN, self).__init__()
-        self.convolutions = DQN.convolution_block(1, 1, 3, 4)
+        self.convolutions = DQN.convolution_block(1, 1, 3, 3)
         self.classifier = nn.Sequential(
             nn.Flatten(),
             nn.Dropout(0.2),
             nn.Linear(settings.field_size ** 2, 256),
-            nn.Linear(256, 512),
-            nn.Linear(512, 256),
             nn.Linear(256, 128),
             nn.Linear(128, 64),
             nn.Linear(64, n_actions)
@@ -199,3 +195,7 @@ class Agent:
 
         self.policy_net.eval()
         self.target_net.eval()
+
+    @staticmethod
+    def reward(old_colored, new_colored, episode=None):
+        return -100000 if old_colored == new_colored else (new_colored - old_colored)  # / (episode + 1)

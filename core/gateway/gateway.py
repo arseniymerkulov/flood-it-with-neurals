@@ -93,6 +93,7 @@ class Gateway:
                         Gateway.logger.info(message.message_type)
                         color = message.data['color']
                         color = Color(int(color))
+                        # mask, kills, colored, win = field.turn(i, color)
                         kills, colored, win = field.turn(i, color)
 
                         try:

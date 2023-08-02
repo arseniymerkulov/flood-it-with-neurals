@@ -77,6 +77,12 @@ class Client:
                               reward,
                               old_state['terminated'] or new_state['terminated'])
 
+                import numpy as np
+                print(np.array(old_state['field']))
+                print(np.array(new_state['field']))
+                print(reward)
+                print('-------------------------------')
+
                 old_state['colored'] = message.data['colored']
 
         async def handler():

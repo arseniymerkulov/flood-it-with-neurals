@@ -6,9 +6,9 @@ class Color(enum.Enum):
     red = 0
     green = 1
     blue = 2
-    orange = 3
-    yellow = 4
-    magenta = 5
+    # orange = 3
+    # yellow = 4
+    # magenta = 5
 
     @staticmethod
     def min():

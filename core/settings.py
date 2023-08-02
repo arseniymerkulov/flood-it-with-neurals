@@ -13,7 +13,7 @@ class Settings:
         # RL hyper parameters
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.save_path = 'models'
-        self.batch_size = 32
+        self.batch_size = 4
         self.gamma = 0.99
         self.eps_start = 0.9
         self.eps_end = 0.05

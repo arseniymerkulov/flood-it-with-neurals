@@ -1,12 +1,17 @@
 from tqdm import tqdm
 from itertools import count
+from statistics import mean
 import matplotlib.pyplot as plt
 import torch
+import glob
+import os
 
 
 from core.gateway.field import Field
 from core.gateway.color import Color
 from core.client.ai.agent import Agent
+from core.settings import Settings
+settings = Settings.get_instance()
 
 
 plt.ion()
@@ -32,7 +37,7 @@ def plot_history(history, show_result=False):
     plt.pause(0.001)  # pause a bit so that plots are updated
 
 
-def train(agent, episodes=500, player_index=0, runtime_plot=False, save_threshold=50):
+def train(agent, episodes=500, turn_index=0, runtime_plot=False):
     history = []
 
     for episode in tqdm(range(episodes)):
@@ -41,11 +46,18 @@ def train(agent, episodes=500, player_index=0, runtime_plot=False, save_threshol
         old_state = field.get_data_to_num()
 
         for i in count():
-            action = agent.predict(field.get_data_to_num())
-            kills, colored, win = field.turn(player_index, Color(action))
-
-            reward = -old_colored if old_colored == colored else (colored - old_colored) / (episode + 1)
+            action = agent.predict(old_state)
+            kills, colored, win = field.turn(turn_index, Color(action))
+            reward = -100000 if old_colored == colored else (colored - old_colored)  # / (episode + 1)
             state = field.get_data_to_num()
+
+            '''
+            import numpy as np
+            print(np.array(old_state))
+            print(np.array(state))
+            print(reward)
+            print('---------------------------')
+            '''
 
             agent.correct(old_state,
                           state,
@@ -57,9 +69,6 @@ def train(agent, episodes=500, player_index=0, runtime_plot=False, save_threshol
                 history.append(i)
                 if runtime_plot:
                     plot_history(history)
-
-                if (episode > episodes / 2 and i < save_threshold) or episode == episodes - 1:
-                    agent.save_model(episode, i)
                 break
 
             old_colored = colored
@@ -68,17 +77,40 @@ def train(agent, episodes=500, player_index=0, runtime_plot=False, save_threshol
     return history
 
 
+def estimate(agent, episodes=500, turn_index=0):
+    history = []
+
+    for episode in tqdm(range(episodes)):
+        field = Field()
+        state = field.get_data_to_num()
+
+        for i in count():
+            action = agent.predict(state)
+            kills, colored, win = field.turn(turn_index, Color(action))
+            state = field.get_data_to_num()
+
+            if win:
+                history.append(i)
+                break
+
+    return history
+
+
 if __name__ == '__main__':
     agent = Agent()
+    # [os.unlink(path) for path in glob.glob(f'{settings.save_path}/*.pt')]
     # agent.load_model(499)
+    session_length = 10
 
-    while True:
-        history = train(agent, 500, 0, False, 15)
+    history = []
+    for i in range(10000):
+        history += train(agent, session_length, 0, False)
+        estimation = mean(estimate(agent, session_length))
+        print(f'\nIteration {i}: mean episode length: {estimation}')
 
-        plot_history(history)
-        plt.ioff()
-        plt.show()
+        if estimation < 8:
+            agent.save_model(i * session_length, int(estimation))
 
-        i = input()
-        if i == 'e':
-            break
+    plot_history(history)
+    plt.ioff()
+    plt.show()
