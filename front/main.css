@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap');
+
+:root {
+    --color0: #5FBFF9;
+    --color1: #5E239D;
+    --color2: #F75590;
+    --color3: #E9FF70;
+    --color4: #c6074d;
+    --color5: #ffbf1e;
+    --color6: #CBF6CE; 
+    --color7: #FF9770;
+
+}
+
+body {
+    font-family: 'Ubuntu Mono', monospace;
+    background-color: #353531 ; /* 353531  1e1e1e*/
+    color: white;
+}
+
+.simple_box{
+    height: 25px;
+    width: 25px;
+
+    transition: all 1s ease;
+  
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+.simple_box.is-flipped {
+    transform: rotateY(180deg);
+}
+
+
+#main_grid{
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    perspective: 600px;
+}
+
+#grid_div{
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
+#logs_div {
+    height: 80vh;
+    overflow-y: auto;
+    width: 300px !important;
+    margin-left: 7vw;
+    box-shadow: 6px 6px 12px #c5c5c5,
+    -6px -6px 12px #ffffff;
+    padding: 5px 10px;
+    
+}
+
+
+.color0 {
+    background-color: var(--color0);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color0);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color0);
+    box-shadow: 0px 0px 2px 0px var(--color0);
+}
+
+.color1 {
+    background-color: var(--color1);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color1);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color1);
+    box-shadow: 0px 0px 2px 0px var(--color1);
+}
+
+.color2 {
+    background-color: var(--color2);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color2);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color2);
+    box-shadow: 0px 0px 2px 0px var(--color2);
+}
+
+.color3 {
+    background-color: var(--color3);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color3);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color3);
+    box-shadow: 0px 0px 2px 0px var(--color3);
+}
+
+.color4 {
+    background-color: var(--color4);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color4);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color4);
+    box-shadow: 0px 0px 2px 0px var(--color4);
+}
+
+.color5 {
+    background-color: var(--color5);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color5);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color5);
+    box-shadow: 0px 0px 2px 0px var(--color5);
+}
+
+.color6 {
+    background-color: var(--color6);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color6);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color6);
+    box-shadow: 0px 0px 2px 0px var(--color6);
+}
+
+.color7 {
+    background-color: var(--color7);
+    -webkit-box-shadow: 0px 0px 2px 0px var(--color7);
+    -moz-box-shadow: 0px 0px 2px 0px var(--color7);
+    box-shadow: 0px 0px 2px 0px var(--color7);
+}
+
