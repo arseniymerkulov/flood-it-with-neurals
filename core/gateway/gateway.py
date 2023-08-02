@@ -9,11 +9,13 @@ import time
 from core.utility.message_type import MessageType
 from core.utility.message import (
     Message,
+    MessageReadyRequest,
     MessageInitFieldRequest,
     MessageUpdateFieldRequest,
-    MessageUpdateFieldResponse,
     MessageTurnRequest,
-    MessageTurnResponse,
+    MessageFieldStatusResponse,
+    MessageClientWin,
+    MessageClientKilled,
     MessageClientDisconnected
 )
 from core.utility.connection_type import ConnectionType
@@ -42,14 +44,95 @@ class Gateway:
 
             return message
 
-        async def _send_turn_request(client):
+        async def _send_turn_request(client, field, colored, terminated):
             message = MessageTurnRequest()
+            await client.send(Message.pack(message))
+
+            message = Message.unpack(await client.recv())
+            print(message)
+            assert message.message_type == MessageType.field_status_request.value
+
+            message = MessageFieldStatusResponse(field, colored, terminated)
             await client.send(Message.pack(message))
 
             message = Message.unpack(await client.recv())
             assert message.message_type == MessageType.turn_response.value
 
             return message
+
+        async def _game_session(front):
+            try:
+                if not len(Gateway.clients):
+                    return
+
+                field = Field()
+                message = MessageInitFieldRequest(field, len(Gateway.clients))
+                await front.send(Message.pack(message))
+
+                Gateway.logger.info(f'send init field data')
+
+                while True:
+                    disconnected = []
+                    killed = []
+
+                    for i, client in enumerate(Gateway.clients):
+                        if i in killed:
+                            continue
+
+                        try:
+                            message = await _send_turn_request(client, field, None, False)
+                            Gateway.logger.info(f'get turn data from client {i}')
+
+                        except websockets.exceptions.ConnectionClosedOK:
+                            disconnected.append(client)
+                            message = MessageClientDisconnected(i)
+                            await front.send(Message.pack(message))
+                            Gateway.logger.info(f'client {i} disconnect')
+                            continue
+
+                        Gateway.logger.info(message.message_type)
+                        color = message.data['color']
+                        color = Color(int(color))
+                        kills, colored, win = field.turn(i, color)
+
+                        try:
+                            message = Message.unpack(await client.recv())
+                            assert message.message_type == MessageType.field_status_request.value
+
+                            message = MessageFieldStatusResponse(field, colored, False)
+                            await client.send(Message.pack(message))
+
+                            Gateway.logger.info(f'get turn data from client {i}')
+
+                        except websockets.exceptions.ConnectionClosedOK:
+                            disconnected.append(client)
+                            message = MessageClientDisconnected(i)
+                            await front.send(Message.pack(message))
+                            Gateway.logger.info(f'client {i} disconnect')
+                            continue
+
+                        await _send_update_field_request(front, field, i, color)
+
+                        for j in kills:
+                            message = MessageClientKilled(j)
+                            await front.send(Message.pack(message))
+                            killed.append(j)
+                            Gateway.logger.info(f'client {j} killed')
+
+                        if win:
+                            message = MessageClientWin(i)
+                            await front.send(Message.pack(message))
+                            Gateway.logger.info(f'client {i} win')
+                            return
+
+                    [Gateway.clients.discard(client) for client in disconnected]
+                    if not len(Gateway.clients):
+                        return
+                    time.sleep(2)
+
+            except websockets.exceptions.ConnectionClosedOK:
+                Gateway.front = set()
+                return
 
         async def handler(socket):
             message = await socket.recv()
@@ -70,42 +153,14 @@ class Gateway:
                 Gateway.front.add(socket)
                 # mb make another client - BE
 
-                # try:
-                field = Field()
-                message = MessageInitFieldRequest(field, len(Gateway.clients))
-                await socket.send(Message.pack(message))
-
-                Gateway.logger.info(f'send init field data')
-
                 while True:
-                    # remove discard inside for cycle
-                    for i, client in enumerate(Gateway.clients):
-                        try:
-                            message = await _send_turn_request(client)
+                    message = MessageReadyRequest()
+                    await socket.send(Message.pack(message))
 
-                        except websockets.exceptions.ConnectionClosedOK:
-                            Gateway.clients.discard(client)
-
-                            message = MessageClientDisconnected(i)
-                            await socket.send(Message.pack(message))
-                            continue
-
-                        Gateway.logger.info(message.message_type)
-                        color = message.data['color']
-                        color = Color(int(color))
-                        killed, colored, full = field.turn(i, color)
-                        print(killed)
-                        print(colored)
-                        print(full)
-
-                        await _send_update_field_request(socket, field, i, color)
-
-                    # if killed
-                    # discard killed from clients
-
-                    time.sleep(2)
-                # except websockets.exceptions.ConnectionClosedOK:
-                #     Gateway.
+                    message = await socket.recv()
+                    message = Message.unpack(message)
+                    assert message.message_type == MessageType.ready_response.value
+                    await _game_session(socket)
 
         async def wrapper():
             scheme = urlparse(settings.gateway_url)
